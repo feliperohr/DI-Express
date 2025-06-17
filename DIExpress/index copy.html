@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIExpress</title>
+    <style>
+        .steps{
+            justify-content: center; /* Center horizontally */
+            align-items: center; 
+        }
+        .overlay {
+            display: none;
+            position: fixed; 
+            top: 0; 
+            left: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
+            justify-content: center; /* Center horizontally */
+            align-items: center;     /* Center vertically */
+            z-index: 1000; /* Ensure it is above all other elements */
+        }
+        #uploadStatus, #loading {
+            display: none;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            font-size: 18px;
+            min-width: 200px;
+            color: black;
+        }
+        .progress {
+            width: 90%; 
+            min-width: 100px; 
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 30px;
+            width: 0%;
+            background-color: #314fa0;
+            line-height: 30px;
+            color: white;
+            text-align: center;
+        }
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+        .entradas {
+            border: 0px solid #e9ecef; 
+            border-radius: 2px;
+            background-color: #ffffff;
+        }
+        .enviar {
+            border: 2px solid #000000; 
+            border-radius: 20px;
+            background-color: #e7e7e7;
+        }
+        .principal {
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;  
+            width: fit-content;
+            background-color: #e7e7e7;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .linha {
+            position: relative; 
+            width: fit-content;
+            flex-grow: 1; 
+            display: flex;
+            flex-direction: row; 
+            background-color: white;
+            border: 1px solid #e9ecef;
+            border-radius: 20px;margin: 5px;
+        }
+        .rotulo {
+            position: relative; 
+            width: 10%; 
+            min-width: 100px; 
+            background-color: white; 
+            margin: 5px;
+        }
+        .diventrada{
+            position: relative; 
+            width:90%;
+            min-width: 200px; 
+            background-color: white; 
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="principal">
+        <h2>DI Express</h2>
+        <form id="uploadForm" enctype="multipart/form-data">            
+<!--            
+            <div class="linha">
+                <div class="rotulo">
+                    CPF: 
+                </div>
+                <div class="diventrada">
+                    <input type="text" name="cpf" class="entradas">
+                </div>  
+            </div>
+-->
+            <div class="linha">
+                <div  class="rotulo">
+                    Curso:
+                </div>
+                <div class="diventrada">
+                <select name="curso" class="entradas">
+                    <option value="ped">Licenciatura em Pedagogia</option>
+                    <option value="bio">Licenciatura em Ciências Biológicas</option>
+                    <option value="bict">Bacharelado Interdisciplinar em Ciência e Tecnologia</option>
+                    <option value="tads">Tecnologia em Análise e Desenvolvimento de Sistemas</option>
+                </select>
+                </div>  
+            </div>
+            <div class="linha">
+                <div class="rotulo">
+                    Créditos: 
+                </div>
+                <div class="diventrada">
+                    <textarea name="creditos" rows="10" cols="60" class="entradas">
+Conteúdo
+Prof Juca Bala
+
+Edição
+Designer Maria Chiquinha
+                    </textarea>
+                </div>  
+            </div>
+            <div class="linha">
+                <div class="rotulo">
+                    Arquivo: 
+                </div>
+                <div class="diventrada">
+                <input type="file" id="fileInput" name="arquivoVideo" required class="entradas">
+                </div>  
+            </div>
+            <div style="position: relative; width: fit-content;margin: 5px;">
+                <button type="submit" class="enviar">Enviar</button>
+            </div>    
+        </form>
+        <button class="enviar" onclick="window.open('php/lista_arquivos.php')">Arquivos convertidos</button>        
+    </div>
+    <div id="loading" class="overlay"> 
+        <div id="step1" class="steps"> 
+            <h2>Enviando o Vídeo</h2>
+            <div class="progress">
+                    <div id="progressBar" class="progress-bar">0%</div>
+            </div>
+        </div>
+        <div id="step2">
+            <img src="assets/carregando.gif">
+            <p>Aguarde estamos editando o seu video.</p>
+            <p>Nossos gnomos estão trabalhando para melhorar o áudio e inserir a vinheta e créditos.</p>
+        </div>
+    </div>
+    <div id="uploadStatus" class="overlay"></div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const loadingText = document.getElementById('loading');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const progressBar = document.getElementById('progressBar');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // // showing the loading state
+            loadingText.style.display = 'block';
+            uploadStatus.style.display = 'none';
+            step1.style.display = 'block';
+            step2.style.display = 'none';
+
+            // Create a new FormData object to collect the file data
+            const formData = new FormData(form);
+
+            // Create a new XMLHttpRequest to monitor the upload progress
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/php/di_process_video.php', true);
+
+            // Update the progress bar as the file uploads
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressBar.textContent = percentComplete + '%';
+                    if (percentComplete==100) {
+                        step2.style.display = 'block';
+                        step1.style.display = 'none';
+                    }                    
+                }                
+            };
+
+            xhr.onload = function() {
+                loadingText.style.display = 'none';
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        uploadStatus.className = 'success';
+                    } else {
+                        uploadStatus.className = 'error';
+                    }
+                    uploadStatus.innerHTML = "<h2>"+response.message+"</h2><br> Para acessar os seus arquivos convertidos <a href='php/lista_arquivos.php'>Clique aqui</a>";
+                    uploadStatus.style.display = 'block';
+                } else {
+                    uploadStatus.className = 'error';
+                    uploadStatus.innerText = 'Erro no upload. Tente novamente.';
+                    uploadStatus.style.display = 'block';
+                }
+            };
+
+            xhr.onerror = function() {
+                loadingText.style.display = 'none';
+                uploadStatus.className = 'error';
+                uploadStatus.innerText = 'Erro na conexão. Tente novamente.';
+                uploadStatus.style.display = 'block';
+            };
+
+            xhr.send(formData);
+        });
+    </script>
+</body>
+</html> 
