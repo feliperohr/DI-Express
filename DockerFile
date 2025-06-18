@@ -1,26 +1,21 @@
 FROM php:8.2-apache
 
-# Instala ffmpeg, extensões PHP, utilitários
+# instala ffmpeg, extensões PHP, utilitários
 RUN apt-get update && \
     apt-get install -y ffmpeg libzip-dev unzip git && \
     docker-php-ext-install gd mbstring
 
-# Instala Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
-# Copia todo o projeto para dentro do container (inclui DIExpress/)
 COPY . /var/www/html/
 
-# Garante que o Apache tenha acesso
 RUN chown -R www-data:www-data /var/www/html
 
 WORKDIR /var/www/html
 
-# Instala dependências PHP via Composer (procura composer.json na raiz)
+# roda o arquivo composer.json da raiz
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader || true
 
-# Ativa o mod_rewrite (se for necessário para rotas amigáveis)
 RUN a2enmod rewrite
 
-# Expondo a porta padrão HTTP
 EXPOSE 80
